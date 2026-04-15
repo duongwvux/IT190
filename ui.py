@@ -1,10 +1,7 @@
-"""
-Berlin Rail Shortest Path — UI Shell
-Map display only; backend logic will be added later.
-"""
-
 import customtkinter as ctk
 import tkintermapview as tkmv
+import osmnx as ox
+import func as f
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -32,6 +29,7 @@ STATION_NAMES.sort()
 
 
 class BerlinMapUI(ctk.CTk):
+    G = ox.load_graphml("berlin_rail.graphml")
     def __init__(self):
         super().__init__()
         self.title("Berlin Rail — Shortest Path Finder")
@@ -164,10 +162,51 @@ class BerlinMapUI(ctk.CTk):
 
     # ── Stub callbacks — replace with real logic later ──
     def _on_find(self):
-        self.lbl_result.configure(
-            text="⚙️  Backend chưa kết nối.\nLogic sẽ được thêm sau.",
-            text_color="#F59E0B"
-        )
+        start_station = self.cb_start.get()
+        end_station = self.cb_end.get()
+        
+        self.lbl_result.configure(text= "Đang định vị và tính toán...", text_color=C["text"])
+        self.update()
+        
+        start_node = f.get_all_candidate_nodes(self.G, start_station)
+        end_node = f.get_all_candidate_nodes(self.G, end_station)
+        
+        path_nodes, total_length = f.dijkstra(self.G, start_node, end_node)
+        if path_nodes:
+            km_length = round(total_length/1000, 2)
+            self.lbl_result.configure(
+                text=f"✅ Tìm thấy tuyến đường!\n\n📏 Quãng đường: {km_length} km\n🚉 Đi qua: {len(path_nodes)} điểm (nodes)", 
+                text_color="green"
+            )
+            
+            coordinates = []
+            for node_id in path_nodes:
+                lat = self.G.nodes[node_id]['y']
+                lng = self.G.nodes[node_id]['x']
+                coordinates.append((lat, lng))
+            self.current_map_path = self.map_widget.set_path(
+                coordinates,
+                color= C["accent"],
+                width= 5
+            )
+            start_node = coordinates[0]
+            self.start_marker = self.map_widget.set_marker(
+                start_node[0], start_node[1], 
+                text="Điểm xuất phát",
+                marker_color_circle="#10B981", # Màu xanh lá
+                text_color="#065F46"
+            )
+
+            end_node = coordinates[-1]
+            self.end_marker = self.map_widget.set_marker(
+                end_node[0], end_node[1], 
+                text="Điểm đến",
+                marker_color_circle="#EF4444", # Màu đỏ
+                text_color="#991B1B"
+            )
+            print(path_nodes)
+            self.map_widget.set_position(coordinates[0][0], coordinates[0][1])
+        
 
     def _on_clear(self):
         self.lbl_result.configure(
