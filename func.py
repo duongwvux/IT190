@@ -112,3 +112,4 @@ def dijkstra(G: nx.MultiDiGraph, start_nodes, end_nodes):
         current = previous_nodes[current]
         
     return path, distances[best_end_node]
+
