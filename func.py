@@ -1,8 +1,12 @@
+
 import osmnx as ox
 import networkx as nx
 import heapq
 import math
 
+
+#lat: vĩ độ, lon: kinh độ
+#G: đồ thị của mạng đường sắt berlin
 def get_node_id_from_station(G, station_name):
     query = f"{station_name}, Berlin, Germany"
     try: 
@@ -113,3 +117,51 @@ def dijkstra(G: nx.MultiDiGraph, start_nodes, end_nodes):
         
     return path, distances[best_end_node]
 
+def heuristic(G, node, goal_node):
+    lat1 = G.nodes[node]['y']
+    lon1 = G.nodes[node]['x']
+    lat2 = G.nodes[goal_node]['y']
+    lon2 = G.nodes[goal_node]['x']
+    return haversine_distance(lat1, lon1, lat2, lon2)
+
+def greedy_best_first_search(G: nx.MultiDiGraph, start_nodes, end_nodes):
+    end_nodes_set = set(end_nodes)
+    visited = set()
+    previous_node = {}
+    pq = []
+    for start_node in start_nodes:
+        h = min(heuristic(G, start_node, goal_node) for goal_node in end_nodes_set)
+        heapq.heappush(pq,(h, start_node))
+        previous_node[start_node] = None
+    best_end_node = None
+
+    while pq:
+        current_h, current_node = heapq.heappop(pq)
+        if current_node in end_nodes_set:
+            best_end_node = current_node
+            break
+        if current_node in visited:
+            continue
+        visited.add(current_node)
+        for neighbor in G.neighbors(current_node):
+            if neighbor not in visited:
+                h = min(heuristic(G, neighbor, goal_node) for goal_node in end_nodes_set)
+                heapq.heappush(pq, (h, neighbor))
+
+                if neighbor not in previous_node:
+                    previous_node[neighbor] = current_node
+    if best_end_node is None:
+        return None, float('infinity')
+    path = []
+    current = best_end_node
+
+    while current is not None:
+        path.insert(0, current)
+        current = previous_node[current]
+    total_length = 0
+    for i in range(len(path) - 1):
+        edge_data = G[path[i]][path[i + 1]]
+        min_length = min(float(data.get('length', 1.0)) for data in edge_data.values())
+        total_length += min_length
+
+    return path, total_length
