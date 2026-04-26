@@ -165,3 +165,51 @@ def greedy_best_first_search(G: nx.MultiDiGraph, start_nodes, end_nodes):
         total_length += min_length
 
     return path, total_length
+
+def bellman_ford(G:nx.MultiDiGraph, start_nodes, end_nodes):
+    end_node_set = set(end_nodes)
+    distances = {node: float('infinity') for node in G.nodes}
+    previous_nodes = {node: None for node in G.nodes}
+
+    for start_node in start_nodes:
+        distances[start_node] = 0
+    V = list(G.nodes)
+    for _ in range(len(V) - 1):
+        updated = False
+        for u in G.nodes:
+            if distances[u] == float('infinity'):
+                continue
+            for v in G.neighbors(u):
+                for edge_key in G[u][v]:
+                    edge_data = G[u][v][edge_key]
+                    weight = float(edge_data.get('length', 1.0))
+                    if distances[u] + weight < distances[v]:
+                        distances[v] = distances[u] + weight
+                        previous_nodes[v] = u
+                        updated = True
+        if not updated:
+            break
+    for u in G.nodes:
+        if distances[u] == float('infinity'):
+            continue
+        for v in G.neighbors(u):
+            for edge_key in G[u][v]:
+                edge_data = G[u][v][edge_key]
+                weight = float(edge_data.get('length', 1.0))
+                if distances[u] + weight < distances[v]:
+                    print("Đồ thị chứa chu trình âm")
+                    return None, float('infinity')
+    best_end_node = None
+    best_distance = float('infinity')
+    for end_node in end_nodes:
+        if distances[end_node] < best_distance:
+            best_distance = distances[end_node]
+            best_end_node = end_node
+    if best_end_node is None or best_distance == float('infinity'):
+        return None, float('infinity')  
+    path = []
+    current = best_end_node
+    while current is not None:
+        path.insert(0, current)
+        current = previous_nodes[current]   
+    return path, best_distance
