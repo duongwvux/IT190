@@ -109,6 +109,110 @@ def dijkstra(G: nx.MultiDiGraph, start_nodes, end_nodes):
     
     while current is not None:
         path.insert(0, current)
-        current = previous_nodes[current]
+        current = previous_nodes[current]    
         
     return path, distances[best_end_node]
+    from collections import deque
+
+def dfs(G: nx.MultiDiGraph, start_node, goal_node):
+    """Thuật toán Tìm kiếm theo chiều sâu (DFS)"""
+    open_set = [start_node] 
+    closed = set()
+    came_from = {}
+    came_from[start_node] = None
+    count_node = 0
+
+    while open_set:
+        count_node += 1
+        current = open_set.pop()
+        
+        if current == goal_node:
+            # Rút trích đường đi trực tiếp tại đây
+            path = []
+            curr = goal_node
+            while curr is not None:
+                path.insert(0, curr)
+                curr = came_from.get(curr)
+            return count_node, path
+            
+        if current not in closed:
+            closed.add(current)
+            for neighbor in G.neighbors(current):
+                if neighbor not in closed:
+                    came_from[neighbor] = current
+                    open_set.append(neighbor)
+                    
+    return count_node, None
+
+def bfs(G: nx.MultiDiGraph, start_node, goal_node):
+    """Thuật toán Tìm kiếm theo chiều rộng (BFS)"""
+    open_set = deque([start_node]) 
+    closed = set([start_node])
+    came_from = {}
+    came_from[start_node] = None
+    count_node = 0
+
+    while open_set:
+        count_node += 1
+        current = open_set.popleft()
+        
+        if current == goal_node:
+            # Rút trích đường đi trực tiếp tại đây
+            path = []
+            curr = goal_node
+            while curr is not None:
+                path.insert(0, curr)
+                curr = came_from.get(curr)
+            return count_node, path
+            
+        for neighbor in G.neighbors(current):
+            if neighbor not in closed:
+                closed.add(neighbor)
+                came_from[neighbor] = current
+                open_set.append(neighbor)
+                
+    return count_node, None
+
+def ucs(G: nx.MultiDiGraph, start_node, goal_node):
+    """Thuật toán Uniform Cost Search (UCS)"""
+    open_queue = []
+    heapq.heappush(open_queue, (0, start_node))
+    open_set = {start_node}
+    
+    came_from = {}
+    came_from[start_node] = None
+    
+    g_score = {node: float('inf') for node in G.nodes}
+    g_score[start_node] = 0
+    count_node = 0
+
+    while open_queue:
+        current_dist, current = heapq.heappop(open_queue)
+        count_node += 1
+        
+        if current in open_set:
+            open_set.remove(current)
+            
+        if current == goal_node:
+            # Rút trích đường đi trực tiếp tại đây
+            path = []
+            curr = goal_node
+            while curr is not None:
+                path.insert(0, curr)
+                curr = came_from.get(curr)
+            return count_node, path
+            
+        for neighbor in G.neighbors(current):
+            edge_data = G[current][neighbor][0]
+            weight = float(edge_data.get('length', 1.0))
+            tentative_g_score = g_score[current] + weight
+            
+            if tentative_g_score < g_score[neighbor]:
+                came_from[neighbor] = current
+                g_score[neighbor] = tentative_g_score
+                
+                if neighbor not in open_set:
+                    heapq.heappush(open_queue, (tentative_g_score, neighbor))
+                    open_set.add(neighbor)
+                    
+    return count_node, None
