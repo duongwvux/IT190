@@ -112,3 +112,142 @@ def dijkstra(G: nx.MultiDiGraph, start_nodes, end_nodes):
         current = previous_nodes[current]
         
     return path, distances[best_end_node]
+    from collections import deque
+import heapq
+import networkx as nx
+
+def dfs(G: nx.MultiDiGraph, start_nodes, end_nodes):
+    end_nodes_set = set(end_nodes)
+    
+    open_set = list(start_nodes) # Sử dụng List như một Stack (LIFO)
+    closed = set()
+    previous_nodes = {node: None for node in start_nodes}
+    
+    best_end_node = None
+
+    while open_set:
+        # Lấy phần tử ở ĐỈNH stack (phần tử được thêm vào gần nhất)
+        current_node = open_set.pop()
+        
+        # 1. Nếu điểm đang xét nằm trong danh sách ĐÍCH -> DỪNG NGAY!
+        if current_node in end_nodes_set:
+            best_end_node = current_node
+            break
+            
+        if current_node not in closed:
+            closed.add(current_node) # Đánh dấu đã duyệt
+            # Duyệt qua các hàng xóm
+            for neighbor in G.neighbors(current_node):
+                if neighbor not in closed:
+                    previous_nodes[neighbor] = current_node
+                    open_set.append(neighbor) # Đẩy vào Stack
+                    
+    # 2. Rút trích đường đi từ best_end_node về điểm xuất phát
+    if best_end_node is None:
+        return None, float('infinity') # Không tìm thấy đường nào
+        
+    path = []
+    current = best_end_node
+    
+    while current is not None:
+        path.insert(0, current) # Chèn vào đầu mảng để ra đúng thứ tự
+        current = previous_nodes.get(current)
+        
+    return path, len(path) - 1
+
+def bfs(G: nx.MultiDiGraph, start_nodes, end_nodes):
+    end_nodes_set = set(end_nodes)
+    
+    open_set = deque(start_nodes) # Sử dụng Deque như một Queue (FIFO)
+    closed = set(start_nodes)     # BFS đánh dấu closed ngay khi cho vào queue để tránh lặp
+    previous_nodes = {node: None for node in start_nodes}
+    
+    best_end_node = None
+
+    while open_set:
+        # Lấy phần tử ở ĐẦU hàng đợi (phần tử vào sớm nhất)
+        current_node = open_set.popleft()
+        
+        # 1. Nếu điểm đang xét nằm trong danh sách ĐÍCH -> DỪNG NGAY!
+        if current_node in end_nodes_set:
+            best_end_node = current_node
+            break
+            
+        for neighbor in G.neighbors(current_node):
+            if neighbor not in closed:
+                closed.add(neighbor) # Đánh dấu duyệt ngay khi nhìn thấy
+                previous_nodes[neighbor] = current_node
+                open_set.append(neighbor) # Đẩy vào cuối Queue
+                
+    # 2. Rút trích đường đi từ best_end_node
+    if best_end_node is None:
+        return None, float('infinity') # Không tìm thấy đường nào
+        
+    path = []
+    current = best_end_node
+    
+    while current is not None:
+        path.insert(0, current)
+        current = previous_nodes.get(current)
+        
+    return path, len(path) - 1
+
+def ucs(G: nx.MultiDiGraph, start_nodes, end_nodes):
+    end_nodes_set = set(end_nodes)
+    
+    distances = {node: float('infinity') for node in G.nodes}
+    previous_nodes = {node: None for node in G.nodes}
+    
+    pq = [] # Priority Queue dùng heapq
+    
+    # 1. Ném TẤT CẢ các điểm xuất phát vào hàng đợi ưu tiên với chi phí 0
+    for start_node in start_nodes:
+        distances[start_node] = 0
+        heapq.heappush(pq, (0, start_node))
+        
+    best_end_node = None
+
+    while pq:
+        # Lấy node có chi phí CỘNG DỒN nhỏ nhất hiện tại ra khỏi Priority Queue
+        current_dist, current_node = heapq.heappop(pq)
+        
+        # 2. ĐIỀU KIỆN DỪNG: Với UCS, phải chờ khi node được POP RA khỏi hàng đợi ưu tiên 
+        # mới được check đích, vì lúc này mới đảm bảo đó là đường ngắn nhất.
+        if current_node in end_nodes_set:
+            best_end_node = current_node
+            break
+            
+        # Bỏ qua nếu ta đã tìm thấy một đường ngắn hơn đến node này trước đó (tối ưu hóa Priority Queue)
+        if current_dist > distances[current_node]:
+            continue
+            
+        for neighbor in G.neighbors(current_node):
+            # FIXED: Do đồ thị là MultiDiGraph, giữa 2 node có thể có NGUYÊN MỘT TẬP CÁC CẠNH.
+            # Ta cần duyệt qua các cạnh này và lấy cạnh có độ dài ngắn nhất.
+            min_weight = float('infinity')
+            for edge_key, edge_data in G[current_node][neighbor].items():
+                w = float(edge_data.get('length', 1.0))
+                if w < min_weight:
+                    min_weight = w
+                    
+            dist = current_dist + min_weight
+            
+            # Nếu tìm được đường đi tới neighbor ngắn hơn đường cũ
+            if dist < distances[neighbor]:
+                distances[neighbor] = dist
+                previous_nodes[neighbor] = current_node
+                # Đẩy cập nhật mới vào hàng đợi ưu tiên
+                heapq.heappush(pq, (dist, neighbor))
+                
+    # 3. Rút trích đường đi từ best_end_node
+    if best_end_node is None:
+        return None, float('infinity') # Không tìm thấy đường nào
+        
+    path = []
+    current = best_end_node
+    
+    while current is not None:
+        path.insert(0, current)
+        current = previous_nodes[current] # Traceback lại đường đi
+        
+    return path, distances[best_end_node]
