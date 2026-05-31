@@ -86,11 +86,13 @@ class LoginWindow:
             command=lambda: self._switch("login"))
         self.tab_login_btn.pack(side="left", fill="x", expand=True, ipady=9)
 
-        self.tab_reg_btn = tk.Button(
-            tab_row, text="Đăng ký",
-            font=("Arial", 10, "bold"), bd=0, cursor="hand2",
-            command=lambda: self._switch("register"))
-        self.tab_reg_btn.pack(side="left", fill="x", expand=True, ipady=9)
+        self.tab_reg_btn = None
+        if self.selected_role != "admin":
+            self.tab_reg_btn = tk.Button(
+                tab_row, text="Đăng ký",
+                font=("Arial", 10, "bold"), bd=0, cursor="hand2",
+                command=lambda: self._switch("register"))
+            self.tab_reg_btn.pack(side="left", fill="x", expand=True, ipady=9)
 
         tk.Frame(card, height=2, bg=t["tab_active"]).pack(fill="x")
 
@@ -98,7 +100,8 @@ class LoginWindow:
         self.content.pack(padx=20, pady=16, fill="both", expand=True)
 
         self._build_login_form()
-        self._build_register_form()
+        if self.selected_role != "admin":
+            self._build_register_form()
         self._switch("login")
 
     def _build_login_form(self):
@@ -164,10 +167,11 @@ class LoginWindow:
         t = self.t
         for w in self.content.winfo_children():
             w.pack_forget()
-        if tab == "login":
+        if tab == "login" or self.selected_role == "admin":
             self.frm_login.pack(fill="both", expand=True)
             self.tab_login_btn.config(bg=CARD_BG, fg=t["tab_active"])
-            self.tab_reg_btn.config(bg=SEP_CLR, fg=SUBTEXT)
+            if self.tab_reg_btn:
+                self.tab_reg_btn.config(bg=SEP_CLR, fg=SUBTEXT)
         else:
             self.frm_reg.pack(fill="both", expand=True)
             self.tab_reg_btn.config(bg=CARD_BG, fg=t["tab_active"])
