@@ -375,7 +375,19 @@ def bellman_ford(G: nx.MultiDiGraph, start_nodes, end_nodes, avoid_zones=None):
 
 
 # 7. BREADTH-FIRST SEARCH (BFS)
- def bfs(G: nx.MultiDiGraph, start_nodes, end_nodes, avoid_zones=None, weight_attr='weight'):
+def _compute_path_length(G: nx.MultiDiGraph, path, weight_attr='length'):
+    total_distance = 0.0
+    for i in range(len(path) - 1):
+        u = path[i]
+        v = path[i + 1]
+        edge_data = G.get_edge_data(u, v)
+        if edge_data:
+            min_weight = min([float(data.get(weight_attr, 1.0)) for data in edge_data.values()])
+            total_distance += min_weight
+    return total_distance
+
+
+def bfs(G: nx.MultiDiGraph, start_nodes, end_nodes, avoid_zones=None, weight_attr='length'):
     end_nodes_set = set(end_nodes)
     open_set = deque()
     closed = set()
@@ -411,22 +423,8 @@ def bellman_ford(G: nx.MultiDiGraph, start_nodes, end_nodes, avoid_zones=None):
     while curr is not None:
         path.insert(0, curr)
         curr = previous_nodes.get(curr)
-        
-    # TÍNH TỔNG CHI PHÍ (KM) CHO ĐƯỜNG ĐI VỪA TÌM ĐƯỢC
-    total_distance = 0
-    for i in range(len(path) - 1):
-        u = path[i]
-        v = path[i+1]
-        
-        # G.get_edge_data(u, v) trả về một dictionary chứa các cạnh giữa u và v
-        edge_data = G.get_edge_data(u, v)
-        if edge_data:
-            # Lấy chi phí nhỏ nhất (phòng trường hợp có nhiều đường ray nối 2 ga)
-            # Thay đổi 'weight' thành tên thuộc tính km của bạn (ví dụ: 'length', 'distance'...)
-            min_weight = min([data.get(weight_attr, 1) for data in edge_data.values()])
-            total_distance += min_weight
 
-    # Trả về đường đi và tổng số km thay vì len(path) - 1
+    total_distance = _compute_path_length(G, path, weight_attr=weight_attr)
     return path, total_distance
 
 
@@ -465,4 +463,6 @@ def dfs(G: nx.MultiDiGraph, start_nodes, end_nodes, avoid_zones=None):
     while curr is not None:
         path.insert(0, curr)
         curr = previous_nodes.get(curr)
-    return path, len(path) - 1
+
+    total_distance = _compute_path_length(G, path, weight_attr='length')
+    return path, total_distance
