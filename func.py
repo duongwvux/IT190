@@ -375,7 +375,7 @@ def bellman_ford(G: nx.MultiDiGraph, start_nodes, end_nodes, avoid_zones=None):
 
 
 # 7. BREADTH-FIRST SEARCH (BFS)
-def bfs(G: nx.MultiDiGraph, start_nodes, end_nodes, avoid_zones=None):
+ def bfs(G: nx.MultiDiGraph, start_nodes, end_nodes, avoid_zones=None, weight_attr='weight'):
     end_nodes_set = set(end_nodes)
     open_set = deque()
     closed = set()
@@ -404,12 +404,30 @@ def bfs(G: nx.MultiDiGraph, start_nodes, end_nodes, avoid_zones=None):
                 open_set.append(neighbor)
 
     if best_end_node is None: return None, float('infinity')
+    
+    # Truy hồi lại đường đi (path)
     path = []
     curr = best_end_node
     while curr is not None:
         path.insert(0, curr)
         curr = previous_nodes.get(curr)
-    return path, len(path) - 1
+        
+    # TÍNH TỔNG CHI PHÍ (KM) CHO ĐƯỜNG ĐI VỪA TÌM ĐƯỢC
+    total_distance = 0
+    for i in range(len(path) - 1):
+        u = path[i]
+        v = path[i+1]
+        
+        # G.get_edge_data(u, v) trả về một dictionary chứa các cạnh giữa u và v
+        edge_data = G.get_edge_data(u, v)
+        if edge_data:
+            # Lấy chi phí nhỏ nhất (phòng trường hợp có nhiều đường ray nối 2 ga)
+            # Thay đổi 'weight' thành tên thuộc tính km của bạn (ví dụ: 'length', 'distance'...)
+            min_weight = min([data.get(weight_attr, 1) for data in edge_data.values()])
+            total_distance += min_weight
+
+    # Trả về đường đi và tổng số km thay vì len(path) - 1
+    return path, total_distance
 
 
 # 8. DEPTH-FIRST SEARCH (DFS)
