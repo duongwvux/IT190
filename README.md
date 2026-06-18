@@ -1,12 +1,10 @@
-# 🚆 Berlin Rail Pathfinder
+# 🚆 Berlin Rail Map
 
 Ứng dụng tìm đường trên mạng lưới đường ray Berlin sử dụng nhiều thuật toán tìm đường khác nhau, với hệ thống đăng nhập phân quyền Admin / User.
 
 ---
 
 ## 📸 Demo
-
-> *(Thêm ảnh chụp màn hình giao diện vào đây)*
 
 ---
 
